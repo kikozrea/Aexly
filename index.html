@@ -147,6 +147,10 @@
         var overlap = false;
         for (var i = 0; i < len; i++) {
             if (snakeBody[i].offsetLeft == iLeft && snakeBody[i].offsetTop == iTop) {
+                oFood.className = 'snakeBody snake-block';
+                score.add(1);
+                score++;
+                document.getElementById('score').innerHTM=score;
                 overlap = true;
                 break;
             }
@@ -228,5 +232,26 @@
             break;  //下
         }
     }
+    var Score = {
+    score: 0, // 当前得分
+    elScore: null, // 显示得分的 HTML 元素
+
+    // 初始化
+    init: function() {
+        this.elScore = document.getElementById('score');
+        this.update();
+    },
+
+    // 增加分数并更新显示
+    add: function(points) {
+        this.score += points;
+        this.update();
+    },
+
+    // 更新分数的显示
+    update: function() {
+        this.elScore.innerHTML = this.score;
+    }
+}
 </script>
 </html>
