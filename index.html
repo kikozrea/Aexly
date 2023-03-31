@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html>
+<head lang="en">
+    <meta charset="UTF-8">
+    <title>贪吃蛇游戏</title>
+    <style>
+        :root {
+            --bg-color: #f8f8f8;
+            --snake-head-color: #f123e0;
+            --snake-body-color: #c74864;
+            --food-color: #14abf1;
+            --grass-color: hwb(125 61% 21%);
+        }
+        * {
+            margin: 0;
+            padding: 0;
+        }
+        #container {
+            width: 1000px;
+            height: 550px;
+            border: 1px solid #000;
+            margin: 100px auto;
+            background-color: var(--bg-color);
+            background-image: linear-gradient(to bottom, rgba(255,255,255,0.3) 0%,rgba(255,255,255,0) 100%), repeating-linear-gradient(45deg, transparent, transparent 25px, rgba(255,255,255,0.05) 25px, rgba(255,255,255,0.05) 50px);
+        }
+        #ground {
+            width: 1000px;
+            height: 500px;
+            position: relative;
+        }
+        #button {
+            float: right;
+            height: 50px;
+            line-height: 50px;
+        }
+        button {
+            width: 70px;
+            height: 30px;
+            cursor: pointer;
+            background-color: var(--bg-color);
+            border: 1px solid rgb(42, 172, 248);
+            border-radius: 10px;
+            margin-left: 14px;
+            transition: all 0.2s ease-in-out;
+        }
+        button:hover {
+            background-color: rgb(240, 5, 64);
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
+        }
+        .block {
+            width: 20px;
+            height: 20px;
+            background: var(--grass-color);
+            float: left;
+        }
+        .snakeBody {
+            width: 20px;
+            height: 20px;
+            position: absolute;
+            background-color: var(--snake-body-color);
+            background-image: linear-gradient(to bottom, var(--snake-body-color) 40%, #d423bd 100%);
+            border: 1px solid #d9d9d9;
+            box-shadow: 0 0 5px rgba(0, 0, 0, 0.3);
+        }
+        .snakeBody:first-child {
+            background-color: var(--snake-head-color);
+            background-image: linear-gradient(to bottom, var(--snake-head-color) 40%, #d62870 100%);
+        }
+        .food {
+            width: 20px;
+            height: 20px;
+            background-color: var(--food-color);
+            background-image: linear-gradient(to bottom, var(--food-color) 40%, #bae27b 100%);
+            border: 1px solid #d9d9d9;
+            box-shadow: 0 0 5px rgba(0, 0, 0, 0.3);
+            position: absolute;
+        }
+    </style>
+</head>
+<body>
+    <div id="container">
+        <div id="ground"></div>
+        <div id="button-container">
+            <div id="button">
+                <!-- 开始和暂停按钮 -->
+                <button id="btn-start">开始游戏</button>
+                <button id="btn-pause">暂停游戏</button>
+            </div>
+        </div>
+    </div>
+</body>
+<script>
+    var timer;
+    window.onload=function(){
+        createGrass();  //创建草坪
+        createSnake();  //创建蛇
+        createFood();   //创建食物
+        document.getElementById('btn-start').onclick=function(){
+            clearInterval(timer);  //防止多次点击开始，清除之前的计时器。
+            timer=setInterval(function(){
+                snakeMove(diRection);  //设置定时器，使蛇每隔一段时间自动移动一个单位并重新渲染界面。
+            },150);
+            snakeMove(diRection);  //为了让玩家在开始游戏后立刻能够控制蛇的方向，调用函数来处理键盘输入。 
+        };
+        document.getElementById('btn-pause').onclick=function(){
+            clearInterval(timer);  //暂停游戏，清除计时器。
+        };
+    };
+    //创建草坪
+    function createGrass(){
+        //创建一个宽度为 1000px，高度为 500px 的草坪
+        var oGround=document.getElementById('ground'); //获取地面的 div 元素
+        var oDiv;
+        for(var i=0;i<50;i++){
+            for(var j=0;j<25;j++){
+                oDiv=document.createElement('div');
+                oDiv.className='block';  //class="block" 用于制作草坪的格子背景。
+                oGround.appendChild(oDiv);  //将创建的元素加入到 div 元素中
+            }
+        }
+    }
+    //创建蛇
+    var snakeBody=[],oFood,diRection='left';  //snakeBody 数组存储蛇身体的 div 元素，oFood 存储食物的 div 元素，diRection 存储蛇头的方向
+    function createSnake(){
+        var oGround=document.getElementById('ground');
+        var oDiv;
+        for(var i=0;i<3;i++){  //初始化蛇身长度为 3
+            oDiv=document.createElement('div');  //创建 div 元素表示一节蛇身体
+            oDiv.className='snakeBody';  //使用 class="snakeBody" 来制作蛇的颜色和样式
+            oDiv.style.left=(i+40)*20+'px';  //设置蛇的初始位置，每个蛇块的宽度为 20px
+            oDiv.style.top='60px';
+            oGround.appendChild(oDiv);  //将创建的蛇块加入到地面的 div 元素中
+            snakeBody.push(oDiv); //将创建的蛇块加入到 snakeBody 数组中
+        }
+    }
+    //创建食物
+    function createFood() {
+    var oGround = document.getElementById('ground');
+    var len = snakeBody.length;
+    var iLeft, iTop;
+    oFood = document.createElement('div');  //创建 div 元素表示食物
+    oFood.className = 'food';  //使用 class="food" 来制作食物的颜色和样式
+    while (true) {
+        iLeft = parseInt(Math.random() * 49) * 20; //在地面上随机生成食物
+        iTop = parseInt(Math.random() * 24) * 20;
+        // 检查新生成的食物是否与蛇身重叠
+        var overlap = false;
+        for (var i = 0; i < len; i++) {
+            if (snakeBody[i].offsetLeft == iLeft && snakeBody[i].offsetTop == iTop) {
+                overlap = true;
+                break;
+            }
+        }
+        if (!overlap) { // 若未重叠，则结束循环
+            break;
+        }
+    }
+    oFood.style.left = iLeft + 'px';
+    oFood.style.top = iTop + 'px';
+    oGround.appendChild(oFood);
+}
+    //蛇运动
+    function snakeMove(direction){  //direction用于作为蛇移动的四个方向的判断
+        var snakeHead=snakeBody[0];  //获取蛇头
+        diRection=direction;  //用于防止比如蛇身本来往左边走，但是向右按钮仍然有效的情况
+        for(var i=snakeBody.length-1;i>0;i--){  //移动说白了就是后面的div使用它前一个div的位置
+            snakeBody[i].style.left=snakeBody[i-1].offsetLeft+'px';
+            snakeBody[i].style.top=snakeBody[i-1].offsetTop+'px';
+        }
+        switch (direction){  //蛇头的位置
+            case 'left':snakeHead.style.left=snakeHead.offsetLeft-20+'px';break;
+            case 'right':snakeHead.style.left=snakeHead.offsetLeft+20+'px';break;
+            case 'up':snakeHead.style.top=snakeHead.offsetTop-20+'px';break;
+            case 'down':snakeHead.style.top=snakeHead.offsetTop+20+'px';break;
+        }
+        //蛇头碰壁
+        if(snakeHead.offsetLeft == -20 || snakeHead.offsetLeft == 1000 || snakeHead.offsetTop == -20 || snakeHead.offsetTop == 500){
+            clearInterval(timer);
+            if(confirm('再来一次?')){
+                window.location.reload();
+            }
+        }
+        //蛇碰到自身
+        for(var j=1;j<snakeBody.length;j++){
+            if(snakeHead.offsetLeft == snakeBody[j].offsetLeft && snakeHead.offsetTop == snakeBody[j].offsetTop){
+                clearInterval(timer);
+                if(confirm('再来一次')){
+                    window.location.reload();
+                }
+            }
+        }
+        //吃掉食物
+        if(snakeHead.offsetLeft==oFood.offsetLeft && snakeHead.offsetTop==oFood.offsetTop){
+    oFood.className='snakeBody snake-block';  //食物变成和蛇身一样的颜色
+    switch (direction){  //把oFood的坐标采用最后一个div的坐标
+        case 'left':oFood.style.left=snakeBody[snakeBody.length-1].offsetLeft+'px';oFood.style.top=snakeBody[snakeBody.length-1].offsetTop+'px';break;
+        case 'right':oFood.style.left=snakeBody[snakeBody.length-1].offsetLeft+'px';oFood.style.top=snakeBody[snakeBody.length-1].offsetTop+'px';break;
+        case 'up':oFood.style.top=snakeBody[snakeBody.length-1].offsetTop+'px';oFood.style.left=snakeBody[snakeBody.length-1].offsetLeft+'px';break;
+        case 'down':oFood.style.top=snakeBody[snakeBody.length-1].offsetTop+'px';oFood.style.left=snakeBody[snakeBody.length-1].offsetLeft+'px';break;
+    }
+    snakeBody.push(oFood);  //把吃掉的div添加到蛇尾
+    createFood();
+}
+    }
+    //上下左右操作
+    document.onkeydown=function(e){  //document不要换成window，出滚动条的话，window会导致窗口移动
+        var event=e || window.event;
+        var direction=event.keyCode;
+        switch (direction){
+            case 37:
+                if(diRection != 'right'){
+                    snakeMove('left');
+                }
+            break;  //左
+            case 39:
+                if(diRection != 'left'){
+                    snakeMove('right');
+                }
+            break;  //右
+            case 38:
+                if(diRection != 'down'){
+                    snakeMove('up');
+                }
+            break;  //上
+            case 40:if(diRection != 'up'){
+                snakeMove('down');
+            }
+            break;  //下
+        }
+    }
+</script>
+</html>
